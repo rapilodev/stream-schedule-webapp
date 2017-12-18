@@ -1,0 +1,165 @@
+html,table{
+	font-family:ubuntu,arial,verdana,sans-serif;
+	font-size:1em;
+}
+
+body{
+	margin:0;
+	padding:0;
+}
+
+div.header{
+	padding:0.3em;
+	height:2em;
+	background-color:menu;
+	border-bottom:0.3em solid #ccc;
+	vertical-align:middle;
+}
+
+h3{
+	margin:0;
+	margin-bottom:1em;
+	font-size:1em;
+	line-height:1em;
+}
+
+div#time{
+	padding:1em;
+	float:right;
+}
+
+div#time td{
+	white-space:nowrap;
+}
+
+div.header ul{
+	list-style-type: none;
+
+}
+
+div.header li{
+	float:left;
+}
+
+a{
+	text-decoration:none;
+}
+
+a:hover{
+	text-decoration:underline;
+}
+
+div.header a{
+	font-size:1em;
+	font-weight:bold;
+	color:menutext;
+	margin-top:0.3em;
+	margin-right:1em;
+	padding:0.1em;
+}
+
+div.header a:hover{
+	opacity:0.8;
+}
+
+table{
+	width:100%;
+}
+
+div#time table{
+	width:18em;
+}
+
+div.panel table tr:nth-child(2n){
+	background-color:f0f0f0;
+}
+
+
+div.command,
+div.schedule{
+	white-space:pre;
+}
+
+div.schedule table,
+div.schedule table{
+}
+
+.info{
+	background:yellow;
+}
+
+.error{
+	background:red;
+}
+
+.okay{
+	background:green;
+}
+
+span.icon{
+	background-repeat:no-repeat;
+}
+
+div.error,
+div.info{
+	padding:0.3em;
+	border:0.3em solid menu;
+	border-radius:0.3em;
+	moz-border-radius:0.3em;
+	webkit-border-radius:0.3em;
+}
+
+div.error span.icon{
+	background-image:url('alert.png');
+
+}
+
+div.info span.icon{
+	background-image:url('warn.png');
+}
+
+th{
+	text-align:left;
+}
+
+th.date{
+	width:12em;
+}
+
+td.date{
+	font-family:mono;
+}
+
+table{
+	border-collapse:1;
+}
+
+div.panel td{
+	padding:0.3em;
+	margin:0;
+	border-top:0.1em solid #ccc;
+}
+
+div.panel{
+	margin:0.3em;
+	padding:0.6em;
+	background:#fff;
+	border:0.3em solid #ccc;
+	border-radius:1em;
+	moz-border-radius:1em;
+	webkit-border-radius:1em;
+}
+
+tr.old{
+	opacity:0.6;
+}
+
+tr.current td{
+	padding-top:0.5em;
+	padding-bottom:0.5em;
+	font-weight:bold;
+	opacity:0.7;
+	border-top:0.3em solid green;
+	border-bottom:0.3em solid green;
+}
+

@@ -1,0 +1,17 @@
+#! /bin/sh
+
+if [ -d /etc/stream-schedule/webapp/ ]; then
+   chgrp -R www-data /etc/stream-schedule/webapp/ 
+   chmod 0755 /etc/stream-schedule/webapp/ 
+fi
+
+if [ -d /usr/share/stream-schedule-webapp/ ]; then
+   chgrp -R www-data /usr/share/stream-schedule-webapp/ 
+   chmod 0750 /usr/share/stream-schedule-webapp/ 
+fi
+
+a2enmod perl
+a2ensite stream-schedule.conf
+/etc/init.d/apache2 restart
+
+exit 0

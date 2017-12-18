@@ -1,0 +1,3 @@
+etc/apache2/sites-available/stream-schedule.conf etc/apache2/sites-available/
+etc/stream-schedule/webapp/stream-schedule.conf  etc/stream-schedule/webapp/
+usr/share/stream-schedule-webapp/ usr/share/

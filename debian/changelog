@@ -1,0 +1,32 @@
+stream-schedule-webapp (0.01.0022) trusty; urgency=low
+  * show synch status again
+ -- Milan Chrobok <mc@radiopiloten.de>  Thu, 16 Nov 2017 18:04:09 +0200
+
+stream-schedule-webapp (0.01.0020) trusty; urgency=low
+  * add station id to alias list
+ -- Milan Chrobok <mc@radiopiloten.de>  Thu, 16 Nov 2017 18:04:09 +0200
+
+stream-schedule-webapp (0.01.0019) trusty; urgency=low
+  * improve output
+ -- Milan Chrobok <mc@radiopiloten.de>  Wed, 15 Nov 2017 18:04:09 +0200
+
+stream-schedule-webapp (0.01.0016) trusty; urgency=low
+  * add input and output measure
+ -- Milan Chrobok <mc@radiopiloten.de>  Fri, 06 Jan 2017 18:04:09 +0200
+
+stream-schedule-webapp (0.01.0015) trusty; urgency=low
+  * sort warnings
+ -- Milan Chrobok <mc@radiopiloten.de>  Sun, 20 Nov 2016 18:04:09 +0200
+
+stream-schedule-webapp (0.01.0014) trusty; urgency=low
+  * fix css, filter icecast log 
+ -- Milan Chrobok <mc@radiopiloten.de>  Tue, 15 Nov 2016 18:04:09 +0200
+
+stream-schedule-webapp (0.01.0012) trusty; urgency=low
+  * fix plot directory
+ -- Milan Chrobok <mc@radiopiloten.de>  Tue, 24 May 2016 12:04:09 +0200
+
+stream-schedule-webapp (0.01.0009) trusty; urgency=low
+  * initial release
+ -- Milan Chrobok <mc@radiopiloten.de>  Wed, 02 Mar 2016 12:04:09 +0200
+
