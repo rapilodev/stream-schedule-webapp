@@ -62,7 +62,7 @@ printHeader();
 
 my $imageUrl  = "/stream-schedule-plot/monitor-$date.svg";
 my $imageFile = "/var/log/stream-schedule/plot/monitor-$date.svg";
-print qq{<a href="$imageUrl"><img src="$imageUrl" width="100%" height="15%"></a>} . "\n"
+print qq{<a href="$imageUrl"><img src="$imageUrl" width="100%" ></a>} . "\n"
   if ( -e $imageFile ) && ( $params->{stations} eq '' );
 
 checkSync($params);
@@ -111,16 +111,6 @@ sub getStatus {
 
 	my $warnings = $status->{warnings};
 
-	my $isLiquidsoapRunning = 1;
-	if (   ( $status->{liquidsoap}->{cli} =~ /problem connecting to/ )
-		|| ( $status->{liquidsoap}->{cli} =~ /liquidsoap is not available/ ) )
-	{
-		printError("liquidsoap is not running!");
-		removeMessage( $warnings, "liquidsoap is not available" );
-		removeMessage( $warnings, "invalid stream URL" );
-		$isLiquidsoapRunning = 0;
-	}
-
 	my $isPlanEmpty = 0;
 	$isPlanEmpty = 1 if defined getMessage( $warnings, "empty schedule" );
 	removeMessage( $warnings, "no future entries" ) if $isPlanEmpty == 1;
@@ -131,6 +121,20 @@ sub getStatus {
 
 	my $isSchedulerRunning = 1;
 	$isSchedulerRunning = 0 if $now - $statusAge > 1 * $min;
+    $status->{isSchedulerRunning} = $isSchedulerRunning;
+
+	if ( $isSchedulerRunning != 0 ) {
+	    my $isLiquidsoapRunning = 1;
+	    if (   ( $status->{liquidsoap}->{cli} =~ /problem connecting to/ )
+		    || ( $status->{liquidsoap}->{cli} =~ /liquidsoap is not available/ ) )
+	    {
+		    printError("liquidsoap is not running!");
+		    removeMessage( $warnings, "liquidsoap is not available" );
+		    removeMessage( $warnings, "invalid stream URL" );
+		    $isLiquidsoapRunning = 0;
+	    }
+	    $status->{isLiquidsoapRunning} = $isLiquidsoapRunning;
+    }
 
 	if ( $isSchedulerRunning == 0 ) {
 		printError("Scheduler is not running!");
@@ -180,7 +184,9 @@ sub printStatus {
 	my $params = shift;
 	my $status = shift;
 
-	printLiquidsoapStatus($status);
+    if ($status->{isLiquidsoapRunning}){
+    	printLiquidsoapStatus($status);
+	}
 	printScheduleStatus() if $params->{details} ne '';
 	printSchedule($status);
 
@@ -210,6 +216,9 @@ sub printLiquidsoapStatus {
 		my @status = split( /https?\:\/\//, $url );
 		$url = $protocol . $status[-1];
 	}
+	$url1=~s!connected!<span style="background:green">connected</span>!;
+	$url1=~s!stopped!<span style="background:red">stopped</span>!;
+	$url1=~s!polling!<span style="background:yellow">polling</span>!;
 	$output .= qq{URL1: <a href="$url">$url1</a><br/>} . "\n";
 
 	my $url2 = $status->{liquidsoap}->{station2}->{url} || '';
@@ -220,6 +229,9 @@ sub printLiquidsoapStatus {
 		my @status = split( /https?\:\/\//, $url );
 		$url = $protocol . $status[-1];
 	}
+	$url2=~s!connected!<span style="background:green">connected</span>!;
+	$url2=~s!stopped!<span style="background:red">stopped</span>!;
+	$url2=~s!polling!<span style="background:yellow">polling</span>!;
 	$output .= qq{URL2: <a href="$url">$url2</a><br/>} . "\n";
 
 	if ( $url1 =~ /invalid_url/ ) {
@@ -245,8 +257,8 @@ sub printStations {
 
 	my $output = qq{
         <div class="panel">
-        <h3>stations</h3>
-        To schedule a station put one of the comma-separated aliases<br> into the Google calendar event title
+            <h3>stations</h3>
+            To schedule one of the stations below, put one of the comma-separated aliases into the Google calendar event title
         </div>
         <div class="panel">
             <div><table><thead><tr>
@@ -254,7 +266,7 @@ sub printStations {
 	for my $key ( 'title', 'alias', 'URL / fallback URL' ) {
 		$output .= qq{<th class="$key">$key</th>} . "\n";
 	}
-	$output .= qq{</thead></tr>."\n"};
+	$output .= qq{</tr></thead>}."\n";
 
 	for my $name ( keys %$stations ) {
 		delete $stations->{$name} unless defined $stations->{$name};
@@ -296,7 +308,7 @@ sub printSchedule {
 	my $output = qq{
         <div class="panel schedule">
         <h3>schedule</h3>
-        <div><table><thead><tr>
+        <table><thead><tr>
     };
 	for my $key ( 'date', 'start', 'station', 'title', 'URLs' ) {
 		$output .= qq{<th class="$key">$key</th>} . "\n";
@@ -334,7 +346,7 @@ sub printSchedule {
 		$output .= qq{</td></tr>} . "\n";
 	}
 	$output .= qq{
-        </tbody></table></div>
+        </tbody></table>
         </div>
     };
 	print $output;

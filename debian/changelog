@@ -1,3 +1,7 @@
+stream-schedule-webapp (0.01.0025) xenial; urgency=low
+  * update design, improve blacklist, 
+ -- Milan Chrobok <mc@radiopiloten.de>  Thu, 21 Apr 2018 18:04:09 +0200
+
 stream-schedule-webapp (0.01.0022) trusty; urgency=low
   * show synch status again
  -- Milan Chrobok <mc@radiopiloten.de>  Thu, 16 Nov 2017 18:04:09 +0200

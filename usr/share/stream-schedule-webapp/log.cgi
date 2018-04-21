@@ -65,12 +65,23 @@ my $settings = {
     liquidsoap => {
         name  => 'liquidsoap',
         files => '/var/log/stream-schedule/liquidsoap.log',
-        blacklist =>
-          [ 'localhost disconnected', 'New client: localhost', 'Client disconnected', 'Re-opening output file' ],
+        blacklist => [ 
+            'localhost disconnected', 
+            'New client: localhost', 
+            'Client disconnected', 
+            'Re-opening output file' ,
+            'try again in '
+        ],
     },
     scheduler => {
         name  => 'scheduler',
         files => '/var/log/stream-schedule/scheduler.log',
+        blacklist => [
+            "skip",
+            "buildDataFile()",
+            "plot()",
+            "checkSleep()"
+        ]
     },
     icecast => {
         name  => 'icecast2',
@@ -79,7 +90,8 @@ my $settings = {
             "checking for file /radio1",
             "checking for file /radio2",
             '/web/radio1" No such file or directory',
-            '/web/radio2" No such file or directory'
+            '/web/radio2" No such file or directory',
+            'fserve/fserve_client_create'
         ]
     },
 };
@@ -115,10 +127,11 @@ for my $process ( keys %$settings ) {
 
         my @stat = stat($file);
         my $size = $stat[7];
-        if ( ( $file_type =~ /ASCII/ ) && ( $size > 2000000 ) ) {
+        my $MB=1024 * 1024;
+        if ( ( $file_type =~ /ASCII/ ) && ( $size > 5*$MB ) ) {
             print "$file is to big! ignore...\n";
             next;
-        } elsif ( ( $file_type =~ /gzip compressed/ ) && ( $size > 500000 ) ) {
+        } elsif ( ( $file_type =~ /gzip compressed/ ) && ( $size > 1*$MB ) ) {
             print "$file is to big! ignore...\n";
             next;
         }

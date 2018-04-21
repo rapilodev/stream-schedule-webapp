@@ -1,26 +1,29 @@
 html,table{
-	font-family:ubuntu,arial,verdana,sans-serif;
-	font-size:1em;
+	font-family:sans-serif;
+	font-size:1rem;
+	line-height:2rem;
 }
 
 body{
 	margin:0;
 	padding:0;
+    background:#ccc;
+}
+
+div,p,a{
+    color:#fff;
 }
 
 div.header{
-	padding:0.3em;
-	height:2em;
-	background-color:menu;
-	border-bottom:0.3em solid #ccc;
-	vertical-align:middle;
+    display: flex;
+    justify-content: center;
+	padding:0.5rem;
+	background-color:#000;
+	border-bottom:1px solid white;
 }
 
 h3{
 	margin:0;
-	margin-bottom:1em;
-	font-size:1em;
-	line-height:1em;
 }
 
 div#time{
@@ -34,7 +37,6 @@ div#time td{
 
 div.header ul{
 	list-style-type: none;
-
 }
 
 div.header li{
@@ -53,9 +55,7 @@ div.header a{
 	font-size:1em;
 	font-weight:bold;
 	color:menutext;
-	margin-top:0.3em;
-	margin-right:1em;
-	padding:0.1em;
+	padding:1rem;
 }
 
 div.header a:hover{
@@ -74,10 +74,13 @@ div.panel table tr:nth-child(2n){
 	background-color:f0f0f0;
 }
 
-
-div.command,
-div.schedule{
+div.command{
 	white-space:pre;
+}
+
+pre, div.command{
+    line-height:1rem;
+
 }
 
 div.schedule table,
@@ -85,14 +88,17 @@ div.schedule table{
 }
 
 .info{
+    color:#000;
 	background:yellow;
 }
 
 .error{
+    color:#000;
 	background:red;
 }
 
 .okay{
+    color:#000;
 	background:green;
 }
 
@@ -101,17 +107,13 @@ span.icon{
 }
 
 div.error,
-div.info{
-	padding:0.3em;
-	border:0.3em solid menu;
-	border-radius:0.3em;
-	moz-border-radius:0.3em;
-	webkit-border-radius:0.3em;
+div.info,
+div.okay{
+	padding:1rem;
 }
 
 div.error span.icon{
 	background-image:url('alert.png');
-
 }
 
 div.info span.icon{
@@ -134,20 +136,19 @@ table{
 	border-collapse:1;
 }
 
+div.panel tr{
+}
+
 div.panel td{
-	padding:0.3em;
+	border-top:0.1rem solid #ccc;
+	padding:0.3rem;
 	margin:0;
-	border-top:0.1em solid #ccc;
 }
 
 div.panel{
-	margin:0.3em;
-	padding:0.6em;
-	background:#fff;
-	border:0.3em solid #ccc;
-	border-radius:1em;
-	moz-border-radius:1em;
-	webkit-border-radius:1em;
+	padding:0.6rem;
+	background:#555;
+	border:0;
 }
 
 tr.old{
@@ -155,11 +156,8 @@ tr.old{
 }
 
 tr.current td{
-	padding-top:0.5em;
-	padding-bottom:0.5em;
-	font-weight:bold;
-	opacity:0.7;
-	border-top:0.3em solid green;
-	border-bottom:0.3em solid green;
+    padding:1rem;
+    color:white;
+    background:#090;
 }
 

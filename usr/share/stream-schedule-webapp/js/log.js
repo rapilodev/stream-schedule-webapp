@@ -31,11 +31,10 @@ function markUp(){
 	);
 	var infos=new Array(
 //			'Switch to http_input_fallback',
-		'Connecting mount',
 		'RELOAD	schedule',
 		'INIT',
 		'PLAY',
-		'liquidsoap station'
+		'liquidsoap station',
 	);
 	var errors=new Array(
 		'Shutdown started',
@@ -50,7 +49,11 @@ function markUp(){
 		'[net_outage',
 		'Feeding stopped: source stopped',
 		'Feeding stopped: Utils.Timeout',
-		'Feeding stopped: Ogg.End_of_stream'
+		'Feeding stopped: Ogg.End_of_stream',
+		'invalid or missing password',
+		'liquidsoap is not available!',
+		'We must catchup',
+		'Connection failed: could not connect to host'
 	);
 
 	$('pre').each(
