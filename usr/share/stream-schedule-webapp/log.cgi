@@ -326,7 +326,8 @@ print "found and merged " . ( @log + 0 ) . " significant lines";
 print " out of " . $line_counter;
 print " in " . $file_counter . " files\n\n";
 my $content = join( "\n", @log );
-print $content;
+print $content."\n";
+print '</pre></div></div></body></html>';
 
 sub printHeader {
     my $header = loadFile( $webappDir . "/template/header.html" );

@@ -59,10 +59,16 @@ our $scheduleFile        = $scheduleConfig->{scheduler}->{scheduleFile};
 our $syncTriggerFile     = $scheduleConfig->{scheduler}->{triggerSyncFile};
 
 printHeader();
+print '<div id="content">';
 
 my $imageUrl  = "/stream-schedule-plot/monitor-$date.svg";
 my $imageFile = "/var/log/stream-schedule/plot/monitor-$date.svg";
-print qq{<a href="$imageUrl" id="plot"><img src="$imageUrl" width="100%" ></a>} . "\n"
+print qq{
+<div class="panel">
+<h3>stream audio processing, target peak=-3dB, target loudness=-20dB RMS</h3>
+<a href="$imageUrl" id="plot"><img src="$imageUrl" width="100%" ></a>
+</div>
+} . "\n"
   if ( -e $imageFile ) && ( $params->{stations} eq '' );
 
 checkSync($params);
@@ -70,7 +76,7 @@ my $status = getStatus();
 
 #print STDERR Dumper($status);
 if ( $params->{stations} ne '' ) {
-	printStations( $params, $status->{stations} );
+	printStations( $params, $status );
 } else {
 	printStatus( $params, $status );
 }
@@ -147,19 +153,29 @@ sub getStatus {
 	printInfo("schedule is older than 1 day!") if $now - $scheduleAge > 1 * $day;
 	printInfo("schedule has been updated")     if $scheduleAge - $statusAge > 30 * $sec;
 
+
+    $status->{now}=$now;
+    $status->{statusAge}=$statusAge;
+    $status->{scheduleAge}=$scheduleAge;
+	return $status;
+}
+
+sub getAgeStatus{
+    my $status=shift;
+    
 	my $output = qq{
-        <div id="time" class="panel"><br>
+        <div id="time" class="panel">
             <table>
     };
-	$output .= '<tr><td>now</td><td class="date">' . formatDateSec($now) . '</td></tr>' . "\n";
-	$output .= '<tr><td>status</td><td class="date">' . formatDateSec($statusAge) . '</td></tr>' . "\n";
-	$output .= '<tr><td>schedule age</td><td class="date">' . formatDateSec($scheduleAge) . '</td></tr>' . "\n";
+	$output .= '<tr><td>date</td><td class="date">' . formatDateSec($status->{now}) . '</td></tr>' . "\n";
+	$output .= '<tr><td>last status update</td><td class="date">' . formatDateSec($status->{statusAge}) . '</td></tr>' . "\n";
+	$output .= '<tr><td>last schedule update</td><td class="date">' . formatDateSec($status->{scheduleAge}) . '</td></tr>' . "\n";
 	$output .= qq{
             </table>
         </div>
     };
-    print $output;
-	return $status;
+    return $output;
+
 }
 
 sub getMessage {
@@ -188,6 +204,7 @@ sub printStatus {
     if ($status->{isLiquidsoapRunning}){
     	printLiquidsoapStatus($status);
 	}
+	print getAgeStatus($status);
 	printScheduleStatus() if $params->{details} ne '';
 	printSchedule($status);
 
@@ -206,7 +223,7 @@ sub printLiquidsoapStatus {
 
 	my $output = qq{
         <div class="panel">
-        <h3>liquidsoap - now playing</h3>
+        <h3>now playing</h3>
     };
 
 	my $url1 = $status->{liquidsoap}->{station1}->{url} || '';
@@ -220,7 +237,7 @@ sub printLiquidsoapStatus {
 	$url1=~s!connected!<span style="background:green">connected</span>!;
 	$url1=~s!stopped!<span style="background:red">stopped</span>!;
 	$url1=~s!polling!<span style="background:yellow">polling</span>!;
-	$output .= qq{URL1: <a href="$url">$url1</a><br/>} . "\n";
+	$output .= qq{primary: <a href="$url">$url1</a><br/>} . "\n";
 
 	my $url2 = $status->{liquidsoap}->{station2}->{url} || '';
 
@@ -233,14 +250,14 @@ sub printLiquidsoapStatus {
 	$url2=~s!connected!<span style="background:green">connected</span>!;
 	$url2=~s!stopped!<span style="background:red">stopped</span>!;
 	$url2=~s!polling!<span style="background:yellow">polling</span>!;
-	$output .= qq{URL2: <a href="$url">$url2</a><br/>} . "\n";
+	$output .= qq{fallback: <a href="$url">$url2</a><br/>} . "\n";
 
 	if ( $url1 =~ /invalid_url/ ) {
 		printInfo('station1 : invalid URL!');
 	} elsif ( $status->{liquidsoap}->{station1}->{error} ne '' ) {
-		printInfo( 'URL1: ' . $status->{liquidsoap}->{station1}->{error} );
+		printInfo( 'primary: ' . $status->{liquidsoap}->{station1}->{error} );
 	} elsif ( $status->{liquidsoap}->{station2}->{error} ne '' ) {
-		printInfo( 'URL2: ' . $status->{liquidsoap}->{station2}->{error} );
+		printInfo( 'fallback: ' . $status->{liquidsoap}->{station2}->{error} );
 	}
 
 	if ( $params->{details} ne '' && ( $status->{liquidsoap}->{cli} ne '' ) ) {
@@ -254,13 +271,18 @@ sub printLiquidsoapStatus {
 
 sub printStations {
 	my $params   = shift;
-	my $stations = shift;
+	my $status   = shift;
+	
+	my $stations = $status->{stations};
 
 	my $output = qq{
-        <div class="panel" style="clear:both;">
+        <div class="panel">
             <h3>stations</h3>
             To schedule one of the stations below, put one of the comma-separated aliases into the Google calendar event title
         </div>
+    };
+    $output.=getAgeStatus($status);
+    $output.=qq{
         <div class="panel">
             <div><table><thead><tr>
     };
@@ -288,7 +310,7 @@ sub printStations {
 		my $url2 = $station->{url2};
 		( my $status1, my $status2 ) = checkUrls( $url1, $url2 );
 		$output .= qq{<td><a href="$url1" class="$status1">$url1</a>};
-		$output .= qq{<br><a href="$url2" class="$status2">$url2</a><br>} if $url2 ne '';
+		$output .= qq{<br><a href="$url2" class="$status2">$url2</a>} if $url2 ne '';
 		$output .= qq{</td>};
 		$output .= qq{</tr>};
 
@@ -421,7 +443,7 @@ sub printHeader {
 
 sub printFooter {
 	print qq{
-    </body></html>
+    </div></body></html>
     };
 }
 
