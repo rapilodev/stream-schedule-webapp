@@ -62,7 +62,7 @@ printHeader();
 
 my $imageUrl  = "/stream-schedule-plot/monitor-$date.svg";
 my $imageFile = "/var/log/stream-schedule/plot/monitor-$date.svg";
-print qq{<a href="$imageUrl"><img src="$imageUrl" width="100%" ></a>} . "\n"
+print qq{<a href="$imageUrl" id="plot"><img src="$imageUrl" width="100%" ></a>} . "\n"
   if ( -e $imageFile ) && ( $params->{stations} eq '' );
 
 checkSync($params);
@@ -148,13 +148,14 @@ sub getStatus {
 	printInfo("schedule has been updated")     if $scheduleAge - $statusAge > 30 * $sec;
 
 	my $output = qq{
-        <div id="time"><table>
+        <div id="time" class="panel"><br>
+            <table>
     };
 	$output .= '<tr><td>now</td><td class="date">' . formatDateSec($now) . '</td></tr>' . "\n";
 	$output .= '<tr><td>status</td><td class="date">' . formatDateSec($statusAge) . '</td></tr>' . "\n";
 	$output .= '<tr><td>schedule age</td><td class="date">' . formatDateSec($scheduleAge) . '</td></tr>' . "\n";
 	$output .= qq{
-        </table>
+            </table>
         </div>
     };
     print $output;
@@ -256,7 +257,7 @@ sub printStations {
 	my $stations = shift;
 
 	my $output = qq{
-        <div class="panel">
+        <div class="panel" style="clear:both;">
             <h3>stations</h3>
             To schedule one of the stations below, put one of the comma-separated aliases into the Google calendar event title
         </div>
@@ -306,7 +307,7 @@ sub printSchedule {
 	my $current  = $status->{current};
 
 	my $output = qq{
-        <div class="panel schedule">
+        <div class="panel schedule" style="clear:both;">
         <h3>schedule</h3>
         <table><thead><tr>
     };

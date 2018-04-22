@@ -7,7 +7,7 @@ html,table{
 body{
 	margin:0;
 	padding:0;
-    background:#ccc;
+	background:#555;
 }
 
 div,p,a{
@@ -24,11 +24,18 @@ div.header{
 
 h3{
 	margin:0;
+	background:white;
+	color:black;
+	text-align:center;
+	opacity:0.5;
+	display:block;
 }
 
 div#time{
-	padding:1em;
+	padding:1.5rem;
 	float:right;
+	line-height:1rem;
+	display:block;
 }
 
 div#time td{
@@ -80,7 +87,6 @@ div.command{
 
 pre, div.command{
     line-height:1rem;
-
 }
 
 div.schedule table,
@@ -140,14 +146,13 @@ div.panel tr{
 }
 
 div.panel td{
-	border-top:0.1rem solid #ccc;
+	border-bottom:0.1rem solid #ccc;
 	padding:0.3rem;
 	margin:0;
 }
 
 div.panel{
 	padding:0.6rem;
-	background:#555;
 	border:0;
 }
 
