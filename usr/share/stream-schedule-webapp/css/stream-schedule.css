@@ -65,6 +65,8 @@ div#content{
 
 h3{
 	margin:0;
+	margin-left:-1rem;
+	margin-right:-1rem;
 	background:white;
 	color:black;
 	text-align:center;
@@ -80,25 +82,17 @@ a:hover{
 	text-decoration:underline;
 }
 
-
-div#time{
-	padding:1.5rem;
-	line-height:1rem;
-}
-
 div#time td{
 	white-space:nowrap;
 }
 
-div#time table{
-	width:18em;
-}
-
 div.panel{
-    padding:0.6rem;
+    margin:1px;
+	padding:1rem;
 	padding-top:0;
 	border:0;
     display:inline;
+    background:#333;
 }
 
 div.panel table tr:nth-child(2n){

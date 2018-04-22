@@ -164,7 +164,8 @@ sub getAgeStatus{
     my $status=shift;
     
 	my $output = qq{
-        <div id="time" class="panel">
+            <div id="time" class="panel">
+            <h3>date</h3>
             <table>
     };
 	$output .= '<tr><td>date</td><td class="date">' . formatDateSec($status->{now}) . '</td></tr>' . "\n";
@@ -275,16 +276,14 @@ sub printStations {
 	
 	my $stations = $status->{stations};
 
-	my $output = qq{
-        <div class="panel">
-            <h3>stations</h3>
-            To schedule one of the stations below, put one of the comma-separated aliases into the Google calendar event title
-        </div>
-    };
+    my $output;
     $output.=getAgeStatus($status);
+
     $output.=qq{
         <div class="panel">
-            <div><table><thead><tr>
+        <h3>stations</h3>
+        To schedule one of the stations below, put one of the comma-separated aliases into the Google calendar event title
+        <table><thead><tr>
     };
 	for my $key ( 'title', 'alias', 'URL / fallback URL' ) {
 		$output .= qq{<th class="$key">$key</th>} . "\n";
