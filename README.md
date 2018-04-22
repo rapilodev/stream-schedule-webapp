@@ -1,2 +1,4 @@
 # stream-schedule-webapp
-web interface for stream-schedule
+a web interface to monitor stream-schedule
+
+![screenshot](docs/stream-schedule-webapp.png)
