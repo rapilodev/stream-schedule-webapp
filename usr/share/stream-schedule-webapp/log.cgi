@@ -1,368 +1,307 @@
 #/usr/bin/perl
-use CGI;
-use Data::Dumper;
-
 use strict;
 use warnings;
 
+use CGI;
+use Data::Dumper;
+use Time::HiRes qw(time);
+use IO::Zlib;
+use Time::Local;
+
 our $webConfigFile = '/etc/stream-schedule/webapp/stream-schedule.conf';
+our $webappDir     = '.';
+our $outputStream  = '';
+
+my $MB    = 1024 * 1024;
+my $debug = 0;
+
+my $settings = {
+	liquidsoap => {
+		name  => 'liquidsoap',
+		files => '/var/log/stream-schedule/liquidsoap.log',
+		blacklist =>
+		  [ 'localhost disconnected', 'New client: localhost', 'Client disconnected', 'Re-opening output file', 'try again in ' ],
+	},
+	scheduler => {
+		name      => 'scheduler',
+		files     => '/var/log/stream-schedule/scheduler.log',
+		blacklist => [ "skip", "buildDataFile()", "plot()", "checkSleep()", "printStatus()" ]
+	},
+	icecast => {
+		name      => 'icecast2',
+		files     => '/var/log/icecast2/error.log',
+		blacklist => [
+			"checking for file /radio1",
+			"checking for file /radio2",
+			'/web/radio1" No such file or directory',
+			'/web/radio2" No such file or directory',
+			'fserve/fserve_client_create'
+		]
+	},
+};
 
 binmode STDOUT, ":encoding(UTF-8)";
 
-my $cgi    = new CGI();
-my $params = $cgi->Vars;
+sub printHeader {
+    #print "Content-type:text/plain; charset=utf8\n\n";
+	my $header = loadFile( $webappDir . "/template/header.html" );
+	$header =~ s/\$outputStream/$outputStream/g;
 
-my $debug = 0;
-my $date  = '';
-my $year  = '';
-my $month = '';
-my $day   = '';
+	$header .= q{
+        <link type="text/css" href="css/jquery-ui.min.css" rel="stylesheet" />	
+    <script type="text/javascript" src="js/jquery-ui.min.js"></script>
+    <script type="text/javascript" src="js/log.js"></script>
 
-our $webappDir    = '.';
-our $outputStream = '';
-
-if ( $params->{date} eq 'today' ) {
-    $params->{date} = epochToDatetime();
-}
-if ( $params->{date} =~ /(\d\d\d\d)\-(\d\d)\-(\d\d)/ ) {
-    $year  = $1;
-    $month = $2;
-    $day   = $3;
-    $date  = $year . '-' . $month . '-' . $day;
+    <div class="panel">
+    <form id="form" action="log.cgi" method="get">
+	    <p>Date: <input name="date" type="text" class="datepicker" size="30"/></p>
+    </form>	
+    <pre>};
+	print $header;
 }
 
-#if ($ENV{HTTP_REFERER}=~/log/){
-print $cgi->header('text/html;charset=utf-8');
+sub epochToDatetime {
+	my $time = shift;
 
-use Config::General;
-printError( 'config file does not exist', 'exit' ) unless ( -e $webConfigFile );
-printError( 'cannot read config file',    'exit' ) unless ( -r $webConfigFile );
+	$time = time() unless ( ( defined $time ) && ( $time ne '' ) );
+	( my $sec, my $min, my $hour, my $day, my $month, my $year ) = localtime($time);
+	my $datetime = sprintf( "%4d-%02d-%02d %02d:%02d:%02d", $year + 1900, $month + 1, $day, $hour, $min, $sec );
+	return $datetime;
+}
 
-my $config = new Config::General($webConfigFile);
-$config = $config->{DefaultConfig};
-printError( 'no config set', 'exit' ) unless ( defined $config );
-$webappDir    = $config->{web}->{webAppDir};
-$outputStream = $config->{web}->{outputStream};
+sub loadFile {
+	my $filename = $_[0];
 
-printHeader();
-print q{
-    <link type="text/css" href="css/jquery-ui.min.css" rel="stylesheet" />	
-<script type="text/javascript" src="js/jquery-ui.min.js"></script>
-<script type="text/javascript" src="js/log.js"></script>
+	my $content = '';
+	if ( -e $filename ) {
+		open my $FILE, "<", $filename || printError("cant read file '$filename'!");
+		my $content = join "", (<$FILE>);
+		close $FILE;
+		return $content;
+	} else {
+		printError("cant access file '$filename'!");
+	}
+	return '';
+}
 
-<div class="panel">
-<form id="form" action="log.cgi" method="get">
-	<p>Date: <input name="date" type="text" class="datepicker" size="30"/></p>
-</form>	
-<pre>
-};
+sub printError {
+	my $message = shift;
+	my $option  = shift;
+	print qq{<div class="error"><span class="icon" >&nbsp; &nbsp; &nbsp;</span>$message</div>};
+	exit if $option eq 'exit';
+}
 
-exit if ( $params->{date} eq '' );
+sub getFileProperties {
+	my $file = shift;
+	my @stat = stat($file);
+	my $size = $stat[7];
+	my $modifiedAt = $stat[9];
+	return {
+	    size       => $size, 
+	    modifiedAt => $modifiedAt
+	};
+}
 
-#}
 
-my $settings = {
-    liquidsoap => {
-        name  => 'liquidsoap',
-        files => '/var/log/stream-schedule/liquidsoap.log',
-        blacklist => [ 
-            'localhost disconnected', 
-            'New client: localhost', 
-            'Client disconnected', 
-            'Re-opening output file' ,
-            'try again in '
-        ],
-    },
-    scheduler => {
-        name  => 'scheduler',
-        files => '/var/log/stream-schedule/scheduler.log',
-        blacklist => [
-            "skip",
-            "buildDataFile()",
-            "plot()",
-            "checkSleep()"
-        ]
-    },
-    icecast => {
-        name  => 'icecast2',
-        files => '/var/log/icecast2/error.log',
-        blacklist => [
-            "checking for file /radio1",
-            "checking for file /radio2",
-            '/web/radio1" No such file or directory',
-            '/web/radio2" No such file or directory',
-            'fserve/fserve_client_create'
-        ]
-    },
-};
+#1524953936
+#1527458400 
 
-my $results = [];
-my $names   = [];
+sub parseFile {
+	my $linesByDate = shift;
+	my $file        = shift;
+	my $targetDate  = shift;
+	my $blackList   = shift;
+	my $name        = shift;
+
+    my ($year, $month, $day) = split /\-/, $targetDate;
+    my $targetEpoch= timelocal(0,0,0,$day,$month-1,$year-1900);#+ 24 * 60 *60;    
+
+	my $properties = getFileProperties($file);
+	if ($properties->{modifiedAt} < $targetEpoch){
+	    print "file $file is too old, modifiedAt=$properties->{modifiedAt}, targetEpoch=$targetEpoch \n";
+	    return undef;
+	}	
+
+	my $fileType = `file '$file' 2>&1`;
+	print $file. "\t" . $fileType . "\n" if $debug == 1;
+
+	if ( ( $fileType =~ /ASCII/ ) && ( $properties->{size} > 5 * $MB ) ) {
+		print "$file is to big! ignore...\n";
+		return undef;
+	} elsif ( ( $fileType =~ /gzip compressed/ ) && ( $properties->{size} > 1 * $MB ) ) {
+		print "$file is to big! ignore...\n";
+		return undef;
+	}
+
+	my $cmd = undef;
+	if ( $fileType =~ /gzip compressed/ ) {
+    	$cmd = new IO::Zlib;
+    	$cmd->open($file, "rb");
+		#open $cmd, "zcat '" . $file . "'|";
+	} elsif ( $fileType =~ /text/ ) {
+		open $cmd, '<', $file;
+	} else {
+	    print "file $file: could not open to read\n";
+		return undef;
+	}
+
+	my $dateMatch = qr/([\[]?(\d\d\d\d)[\s\-\/]+(\d\d)[\s\-\/]+(\d\d)[\sT]+(\d\d)\:(\d\d)\:(\d\d)[\]]?\s+)/;
+	my $duplicate = 1;
+	my $line      = '';
+    my $previousLine = '';
+	my $datetime  = '';
+
+	my $blackMatch = '(' . join( "|", @$blackList ) . ')';
+	$blackMatch = qr/$blackMatch/;
+
+    my $matchCounter=0;
+    my $lineCounter=0;
+	while (<$cmd>) {
+		$line = $_;
+        $lineCounter++;
+        
+		if ( $line =~ /$dateMatch/ ) {
+			my $match = $1;
+			my $year  = $2;
+			my $month = $3;
+			my $day   = $4;
+			my $hour  = $5;
+			my $min   = $6;
+			my $sec   = $7;
+			my $date  = $year . "-" . $month . "-" . $day;
+			if ( $date lt $targetDate ) {
+				#print "file $file, date $date before target $targetDate, ignore\n";
+			    next;
+			}elsif ($date gt $targetDate){
+				#print "file $file, date $date beyond target $targetDate, skip\n";
+            	printf ("file %s: found %d of %d lines\n", $file, $matchCounter, $lineCounter);
+				return 1;
+			}
+			$datetime = $date . " " . $hour . ":" . $min . ":" . $sec;
+			#print "file $file line date='$datetime', match='$match'\n";
+			$line = substr( $line, length($match) );
+		}
+
+		#add blacklist parameters
+		next if $line =~ /$blackMatch/;
+
+		$linesByDate->{$datetime} = [] unless defined $linesByDate->{$datetime};
+		my $lines = $linesByDate->{$datetime};
+
+		if ( $line eq $previousLine ) {
+			$duplicate++;
+			next;
+		} elsif ( ( $duplicate > 1 ) && ( scalar(@$lines) > 1 ) ) {
+			$lines->[-1] =~ s/\n$//g;
+			$lines->[-1] .= " [$duplicate times]\n";
+			$duplicate = 1;
+		}
+
+        $previousLine = $line;
+		$line         = $datetime . "\t" . $name . "\t" . $line;
+        $matchCounter++;
+		push @$lines, $line;
+
+	}
+	close $cmd;
+	printf ("file %s: found %d of %d lines\n", $file, $matchCounter, $lineCounter);
+	#print "close file\n";
+	return 1;
+}
 
 #rver:3] Client localhost disconnected without saying goodbye..!
 #2016-03-24 08:12:11 [server:3] Client localhost disconnected without saying goodbye..!
 #2016-03-24 08:12:11 [server:3] New client: localhost.
 
-my $line_counter = 0;
-my $file_counter = 0;
-for my $process ( keys %$settings ) {
-    my @files = glob( $settings->{$process}->{files} . '*' );
-    for my $file (@files) {
+sub parseFiles {
+	my $year  = shift;
+	my $month = shift;
+	my $day   = shift;
 
-        #only logrotate files
-        next unless ( ( $file =~ /log(\.\d+)?(\.gz)?$/ ) );
-        $file_counter++;
+	my $targetDate = $year . '-' . $month . '-' . $day;
 
-        my $cmd       = '';
-        my $file_type = `file '$file'`;
-        print $file. "\t" . $file_type . "\n" if ( $debug == 1 );
-        if ( $file_type =~ /gzip compressed/ ) {
-            $cmd = "zcat '" . $file . "'";
-        }
-        if ( $file_type =~ /text/ ) {
-            $cmd = "cat '" . $file . "'";
-        }
-        next if ( $cmd eq '' );
-        print "$file\n" if ( $debug == 1 );
+	my $results = [];
+	my $names   = [];
 
-        my @stat = stat($file);
-        my $size = $stat[7];
-        my $MB=1024 * 1024;
-        if ( ( $file_type =~ /ASCII/ ) && ( $size > 5*$MB ) ) {
-            print "$file is to big! ignore...\n";
-            next;
-        } elsif ( ( $file_type =~ /gzip compressed/ ) && ( $size > 1*$MB ) ) {
-            print "$file is to big! ignore...\n";
-            next;
-        }
+	my $fileCounter = 0;
+    my $filesParsed = 0;
+	my $linesByDate = {};
 
-        #add blacklist parameters
-        for my $blacklist ( @{ $settings->{$process}->{blacklist} } ) {
-            $cmd .= q{ | grep -v '} . $blacklist . q{'};
-        }
+	for my $process ( keys %$settings ) {
+		my $name      = $settings->{$process}->{name};
+		my $blackList = $settings->{$process}->{blacklist};
 
-        $cmd .= ' | egrep "^\[?' . $year . '[\/\-]' . $month . '[\/\-]' . $day . '"' if ( $date ne '' );
+		my @files = glob( $settings->{$process}->{files} . '*' );
+		for my $file (@files) {
+			next unless $file =~ /log(\.\d+)?(\.gz)?$/;
+			#print "parse $file\n";
 
-        print $cmd. "\n" if ( $debug == 1 );
-        my $log_content = `$cmd`;
+			$fileCounter++;
+			$filesParsed++ if defined parseFile( $linesByDate, $file, $targetDate, $blackList, $name );
 
-        my @lines            = ();
-        my $liquidsoap_start = 0;
-        for my $line ( split /\n/, $log_content ) {
-            $line_counter++;
+			#collect results and its process names
+		}
+	}
 
-            #2016/03/25 13:40:28
-            $line =~ s/^(\d\d\d\d)\/(\d\d)\/(\d\d)/$1\-$2\-$3/;
+	printf( "parsed %d of %d files\n", $filesParsed, $fileCounter );
 
-            #[2016-03-25  13:40:28]
-            $line =~ s/^\[([\d\-]+)\s+([\d\:]+)\]/$1 $2/;
+	my @dates = sort { $a cmp $b } keys %$linesByDate;
 
-            if ( $line =~ /^\d\d\d\d\-\d\d\-\d\d / ) {
+	#print Dumper(\@dates);
 
-                my $ignore_line = 0;
+	$| = 0;
+	my $result = '';
+	for my $date (@dates) {
+		print join( "", @{ $linesByDate->{$date} } );
+	}
+	return $result;
 
-                if ( $line =~ /\[main\:\d\] Liquidsoap / ) {
-                    $liquidsoap_start = 1;
-                } elsif ( $line =~ /\[main\:\d\] Using / ) {
-                    $liquidsoap_start = 1;
-                } elsif ( $liquidsoap_start == 1 ) {
-                    if ( $line =~ /\[main\:\d\]/ ) {
-                        $ignore_line = 1;
-                    } else {
-                        $liquidsoap_start = 0;
-                    }
-                }
-
-                #liquidsoap: aggregate Buffer overruns
-                elsif (( $line =~ /Buffer overrun/ )
-                    && ( $lines[-1] =~ /Buffer overrun/ )
-                    && ( $lines[-2] =~ /Buffer overrun/ ) )
-                {
-                    pop @lines;
-                    if ( $lines[-1] =~ /\[(\d+) times\]$/ ) {
-                        my $val = $1 + 1;
-                        $lines[-1] =~ s/\[(\d+) times\]$/\[$val times\]/;
-                    } else {
-                        $lines[-1] .= "\t[1 times]";
-                    }
-                }
-
-                #liquidsoap: dummy lines
-                elsif ( $line =~ /dummy/ ) {
-                    $ignore_line = 1;
-                }
-
-                #icecast: aggregate 'seen initial'
-                elsif (
-                       ( $line =~ /seen initial/ )
-                    && ( $lines[-1] =~ /seen initial/ )
-
-                    #					&& ($lines[-2]=~/seen initial/)
-                  )
-                {
-
-                    #					pop @lines;
-                    if ( $lines[-1] =~ /\[(\d+) times\]$/ ) {
-                        my $val = $1 + 1;
-                        $lines[-1] =~ s/\[(\d+) times\]$/\[$val times\]/;
-                    } else {
-                        $lines[-1] .= "\t[1 times]";
-                    }
-                    $ignore_line = 1;
-                }
-
-                #2016-03-24 07:48:40 -9	current	'default' since	2016-03-23 06:30:00
-                #2016-03-24 07:48:40 -8	PLAY	default
-                #2016-03-24 07:48:40 -7 liquidsoap stationstation1 plays:	http://wbox-lottum.ath.cx:8765/radio
-                #2016-03-24 07:48:40 -6 liquidsoap stationstation2 plays:	http://wbox-lottum1.ath.cx:8765/radio
-                #2016-03-24 07:48:40 -5 next in	2 day 9 hours 11 min 12 secs	frrapo at 2016-03-26 18:00:00
-                #2016-03-24 07:49:10 -4 current	'default' since	2016-03-23 06:30:00
-                #2016-03-24 07:49:10 -3	PLAY	default
-                #2016-03-24 07:49:10 -2	liquidsoap stationstation1 plays:	http://wbox-lottum.ath.cx:8765/radio
-                #2016-03-24 07:49:10 -1	liquidsoap stationstation2 plays:	http://wbox-lottum1.ath.cx:8765/radio
-                #2016-03-24 07:49:10 	next in	2 day 9 hours 10 min 42 secs	frrapo at 2016-03-26 18:00:00
-
-                #scheduler aggregate current play
-                elsif (    #scheduler
-                    ( $line =~ /next in/ )
-                    #					&& (@lines>10)
-                    #					&& ( substr($lines[-1],19) eq substr($lines[-6],19) )
-                    #					&& ( substr($lines[-2],19) eq substr($lines[-7],19) )
-                    #					&& ( substr($lines[-3],19) eq substr($lines[-8],19) )
-                    #					&& ( substr($lines[-4],19) eq substr($lines[-9],19) )
-                  )
-                {
-
-                    #get previous "next in" line in the last 10 lines
-                    my $delta = 4;
-                    while ( ( $delta < 8 ) && ( !( $lines[ -$delta ] =~ /next in/ ) ) ) {
-                        $delta++;
-                    }
-                    if ( ( @lines > $delta ) && ( $lines[ -$delta ] =~ /next in/ ) ) {
-                        my $duplicate = 1;
-                        for my $i ( 1 .. $delta - 1 ) {
-                            if ( substr( $lines[ -$i ], 19 ) eq substr( $lines[ -$i - $delta ], 19 ) ) {
-                                $duplicate++;
-                            }
-                        }
-
-                        if ( $duplicate == $delta ) {
-                            for my $i ( 1 .. $delta ) {
-                                pop @lines;
-                            }
-                        }
-                    }
-
-                } elsif ( $line =~ /\[error_announcer\:\d\] Finished with/ ) {
-                    if ( $lines[-5] =~ /\[error_announcer\:\d\] Finished with/ ) {
-                        pop @lines;
-                        pop @lines;
-                        pop @lines;
-                        pop @lines;
-                        if ( $lines[-1] =~ /\[(\d+) times\]$/ ) {
-                            my $val = $1 + 1;
-                            $lines[-1] =~ s/\[(\d+) times\]$/\[$val times\]/;
-                        } else {
-                            $lines[-1] .= "\t[1 times]";
-                        }
-
-                        $ignore_line = 1;
-                    }
-                }
-
-                #log this line unless marked as to be ignored
-                if ( $ignore_line == 0 ) {
-                    push @lines, $line;    # unless ($line eq $lines[-1]);
-                }
-            }
-        }
-
-        #collect results and its process names
-        push @$results, \@lines;
-        push @$names,   $settings->{$process}->{name};
-    }
 }
 
-#print Dumper($results);
-#exit;
+sub main {
+	my $start  = time();
+	my $cgi    = new CGI();
+	my $params = $cgi->Vars;
 
-#set number of lines and current line number for all result logs
-my $max_rows = [];
-my $line_nr  = [];
-for my $result (@$results) {
-    push @$max_rows, @$result + 0;
-    push @$line_nr,  0;
+	my $year  = '';
+	my $month = '';
+	my $day   = '';
+
+	if ( $params->{date} eq 'today' ) {
+		$params->{date} = epochToDatetime();
+	}
+	if ( $params->{date} =~ /(\d\d\d\d)\-(\d\d)\-(\d\d)/ ) {
+		$year  = $1;
+		$month = $2;
+		$day   = $3;
+	}
+
+	#if ($ENV{HTTP_REFERER}=~/log/){
+	print $cgi->header('text/html;charset=utf-8');
+
+	use Config::General;
+	printError( 'config file does not exist', 'exit' ) unless ( -e $webConfigFile );
+	printError( 'cannot read config file',    'exit' ) unless ( -r $webConfigFile );
+
+	my $config = new Config::General($webConfigFile);
+	$config = $config->{DefaultConfig};
+	printError( 'no config set', 'exit' ) unless ( defined $config );
+	$webappDir    = $config->{web}->{webAppDir};
+	$outputStream = $config->{web}->{outputStream};
+
+	printHeader();
+
+	exit if ( $params->{date} eq '' );
+
+	my $content = '';
+	$content .= parseFiles( $year, $month, $day );
+	$content .= '</pre>';
+	$content .= sprintf( "took %.2f seconds\n", ( time() - $start ) );
+	$content .= '</div></div></body></html>';
+
+	print $content;
+
 }
 
-my @log = ();
-for my $i ( 0 .. 100000 ) {
-    my $min_date   = '9999-99-99 99:99:99';
-    my $min_row_nr = 0;
-    my $min_value  = undef;
-    my $found      = 0;
-
-    for my $row_nr ( 0 .. @$results - 1 ) {
-        if ( $line_nr->[$row_nr] < $max_rows->[$row_nr] ) {
-            my $row_value = $results->[$row_nr]->[ $line_nr->[$row_nr] ];
-            my $row_date = substr( $row_value, 0, 19 );
-
-            if ( $row_date lt $min_date ) {
-                $min_row_nr = $row_nr;
-                $min_date   = $row_date;
-                $min_value  = substr( $row_value, 20 );
-                $min_value  = $row_date . "\t" . $names->[$row_nr] . "\t" . $min_value;
-
-                $found = 1;
-            }
-        }
-    }
-    last unless ( $found == 1 );
-    push @log, $min_value if ( defined $min_value );
-    $line_nr->[$min_row_nr]++;
-
-    #	print"$min_row_nr:\t$line_nr->[$min_row_nr]\t<\t$max_rows->[$min_row_nr]\t$min_value <-- selected\n";
-}
-print "found and merged " . ( @log + 0 ) . " significant lines";
-print " out of " . $line_counter;
-print " in " . $file_counter . " files\n\n";
-my $content = join( "\n", @log );
-print $content."\n";
-print '</pre></div></div></body></html>';
-
-sub printHeader {
-    my $header = loadFile( $webappDir . "/template/header.html" );
-    $header =~ s/\$outputStream/$outputStream/g;
-    print $header;
-}
-
-sub epochToDatetime {
-    my $time = shift;
-
-    $time = time() unless ( ( defined $time ) && ( $time ne '' ) );
-    ( my $sec, my $min, my $hour, my $day, my $month, my $year ) = localtime($time);
-    my $datetime = sprintf( "%4d-%02d-%02d %02d:%02d:%02d", $year + 1900, $month + 1, $day, $hour, $min, $sec );
-    return $datetime;
-}
-
-sub loadFile {
-    my $filename = $_[0];
-
-    my $content = '';
-    if ( -e $filename ) {
-        open my $FILE, "<", $filename || printError("cant read file '$filename'!");
-        my $content = join "", (<$FILE>);
-        close $FILE;
-        return $content;
-    } else {
-        printError("cant access file '$filename'!");
-    }
-    return '';
-}
-
-sub printError {
-    my $message = shift;
-    my $option  = shift;
-    print qq{<div class="error"><span class="icon" >&nbsp; &nbsp; &nbsp;</span>$message</div>};
-    exit if ( $option eq 'exit' );
-}
+main();
 
