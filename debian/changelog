@@ -1,4 +1,4 @@
-stream-schedule-webapp (0.01.0033) xenial; urgency=low
+stream-schedule-webapp (0.01.0034) xenial; urgency=low
   * make log analysis more precise
  -- Milan Chrobok <mc@radiopiloten.de>  Sat, 29 Apr 2018 18:04:09 +0200
 

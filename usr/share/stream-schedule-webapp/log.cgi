@@ -188,7 +188,11 @@ sub parseFile {
 		$linesByDate->{$datetime} = [] unless defined $linesByDate->{$datetime};
 		my $lines = $linesByDate->{$datetime};
 
+        #$line=~s/\.\d+s//g;
+        #$previousLine=~s/\.\d+s//g;
+        #print "a:$line\nb:$previousLine\n";
 		if ( $line eq $previousLine ) {
+			#print "duplicate\n";
 			$duplicate++;
 			next;
 		} elsif ( ( $duplicate > 1 ) && ( scalar(@$lines) > 1 ) ) {
@@ -247,15 +251,7 @@ sub parseFiles {
 
 	my @dates = sort { $a cmp $b } keys %$linesByDate;
 
-	#print Dumper(\@dates);
-
-	$| = 0;
-	my $result = '';
-	for my $date (@dates) {
-		print join( "", @{ $linesByDate->{$date} } );
-	}
-	return $result;
-
+	print join( "", ( map { join( "", @{ $linesByDate->{$_} } ) } @dates));
 }
 
 sub main {
@@ -293,11 +289,12 @@ sub main {
 
 	exit if ( $params->{date} eq '' );
 
+	parseFiles( $year, $month, $day );
+
 	my $content = '';
-	$content .= parseFiles( $year, $month, $day );
 	$content .= '</pre>';
 	$content .= sprintf( "took %.2f seconds\n", ( time() - $start ) );
-	$content .= '</div></div></body></html>';
+	$content .= '</div></body></html>';
 
 	print $content;
 
