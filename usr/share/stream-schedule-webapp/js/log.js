@@ -34,7 +34,6 @@ function markUp(){
 		'RELOAD	schedule',
 		'INIT',
 		'PLAY',
-		'liquidsoap station',
 	);
 	var errors=new Array(
 		'Shutdown started',
@@ -53,7 +52,9 @@ function markUp(){
 		'invalid or missing password',
 		'liquidsoap is not available!',
 		'We must catchup',
-		'Connection failed: could not connect to host'
+		'Connection failed: could not connect to host',
+        'EROR',
+        'not found'
 	);
 
 	$('pre').each(
