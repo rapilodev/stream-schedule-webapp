@@ -57,6 +57,7 @@ our $lang = Date::Language->new($language);
 our $schedulerStatusFile = $scheduleConfig->{scheduler}->{statusFile};
 our $scheduleFile        = $scheduleConfig->{scheduler}->{scheduleFile};
 our $syncTriggerFile     = $scheduleConfig->{scheduler}->{triggerSyncFile};
+our $restartTriggerFile     = $scheduleConfig->{scheduler}->{triggerRestartFile};
 
 printHeader();
 print '<div id="content">';
@@ -72,6 +73,7 @@ print qq{
   if ( -e $imageFile ) && ( $params->{stations} eq '' );
 
 checkSync($params);
+checkRestart($params);
 my $status = getStatus();
 
 #print STDERR Dumper($status);
@@ -86,6 +88,16 @@ sub checkSync {
 	my $params = shift;
 	if ( $params->{action} eq 'sync' ) {
 		saveFile( 'scheduler/triggerSyncFile', $syncTriggerFile, '' );
+		print qq{<meta http-equiv="refresh" content="15;url=index.cgi" />} . "\n";
+	} else {
+		print qq{<meta http-equiv="refresh" content="60;url=index.cgi" />} . "\n";
+	}
+}
+
+sub checkRestart {
+	my $params = shift;
+	if ( $params->{action} eq 'restart' ) {
+		saveFile( 'scheduler/triggerRestartFile', $restartTriggerFile, '' );
 		print qq{<meta http-equiv="refresh" content="15;url=index.cgi" />} . "\n";
 	} else {
 		print qq{<meta http-equiv="refresh" content="60;url=index.cgi" />} . "\n";

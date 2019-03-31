@@ -1,3 +1,7 @@
+stream-schedule-webapp (0.02) xenial; urgency=low
+  * add button to restart liquidsoap
+ -- Milan Chrobok <mc@radiopiloten.de>  Sun, 30 Mar 2019 18:04:09 +0200
+
 stream-schedule-webapp (0.01.0034) xenial; urgency=low
   * make log analysis more precise
  -- Milan Chrobok <mc@radiopiloten.de>  Sat, 29 Apr 2018 18:04:09 +0200
