@@ -20,7 +20,7 @@ my $settings = {
 		name  => 'liquidsoap',
 		files => '/var/log/stream-schedule/liquidsoap.log',
 		blacklist =>
-		  [ 'localhost disconnected', 'New client: localhost', 'Client disconnected', 'Re-opening output file', 'try again in ' ],
+		  [ 'client disconnected', 'New client: ', 'Client disconnected', 'disconnected without', 'Re-opening output file', 'try again in ' ],
 	},
 	scheduler => {
 		name      => 'scheduler',
