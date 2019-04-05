@@ -15,6 +15,8 @@ Depends: ${misc:Depends},
  libdata-compare-perl,
  libnumber-compare-perl,
  libcgi-application-perl,
+ libcgi-simple-perl,
+ libperlio-gzip-perl,
  stream-schedule
 Description: web gui for stream scheduler
  a web gui to show status, plots and logs

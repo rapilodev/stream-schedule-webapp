@@ -1,3 +1,7 @@
+stream-schedule-webapp (0.3) xenial; urgency=low
+  * use PerlIO::gzip to read compressed log files 
+ -- Milan Chrobok <mc@radiopiloten.de>  Fri, 05 Apr 2019 00:00:00 +0200
+
 stream-schedule-webapp (0.02) xenial; urgency=low
   * add button to restart liquidsoap
  -- Milan Chrobok <mc@radiopiloten.de>  Sun, 30 Mar 2019 18:04:09 +0200
