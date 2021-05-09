@@ -2,3 +2,4 @@
 
 a2dissite stream-schedule.conf
 exit 0
+#DEBHELPER#
