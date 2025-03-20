@@ -1,86 +1,83 @@
-function setDatePicker(){
-	$(".datepicker").datepicker();
-	$(".datepicker").datepicker( "option", "dateFormat", 'yy-mm-dd' );
-	$(".datepicker").datepicker( "option", "firstDay", '1' );
+function setDatePicker() {
+    const params = new URLSearchParams(window.location.search);
+    const dateParam = params.get("date");
+    const dateInput = document.querySelector(".datepicker");
 
-	var date = new RegExp('[\\?&]' + 'date' + '=([^&#]*)').exec(window.location.href) || 0;
-	if (date == 0){
-		$(".datepicker").datepicker( "setDate" , 'today' );
-		$('#form').submit();
-	}else{
-		$(".datepicker").datepicker( "setDate" , date[1] );
-		$('.datepicker').change(
-			function() {
-				$('#form').submit();
-			}
-		);
-	}
+    if (!dateInput) return;
+
+    if (dateParam) {
+        dateInput.value = dateParam;
+    } else {
+        const today = new Date().toISOString().split("T")[0];
+        dateInput.value = today;
+    }
+
+    dateInput.addEventListener("change", () => {
+        document.getElementById("form").submit();
+    });
+
+    // Auto-submit on load if no date param
+    if (!dateParam) {
+        document.getElementById("form").submit();
+    }
 }
 
-function markUp(){
-	var okays=new Array(
-		'Source logging in at mountpoint',
-		'Connection setup was successful',
-		'accepted',
-		'server started',
-		'LOG START',
-		'Switch to src_',
-		'Method "OGG" ',
-		'Method "MP3" ',
-		'Decoding...'
-	);
-	var infos=new Array(
-//			'Switch to http_input_fallback',
-		'RELOAD	schedule',
-		'INIT',
-		'PLAY',
-	);
-	var errors=new Array(
-		'Shutdown started',
-		'Shutting down',
-		'Source failed',
-		'Underrun',
-		'ERROR',
-		'Alsa error: Device or resource busy!',
-		'source_shutdown',
-		'LOG END',
-		'Switch to net_outage',
-		'[net_outage',
-		'Feeding stopped: source stopped',
-		'Feeding stopped: Utils.Timeout',
-		'Feeding stopped: Ogg.End_of_stream',
-		'invalid or missing password',
-		'liquidsoap is not available!',
-		'We must catchup',
-		'Connection failed: could not connect to host',
+function markUp() {
+    var okays = new Array(
+        'Source logging in at mountpoint',
+        'Connection setup was successful',
+        'accepted',
+        'server started',
+        'LOG START',
+        'Switch to src_',
+        'Method "OGG" ',
+        'Method "MP3" ',
+        'Decoding...'
+    );
+    var infos = new Array(
+        'RELOAD	schedule',
+        'INIT',
+        'PLAY',
+    );
+    var errors = new Array(
+        'Shutdown started',
+        'Shutting down',
+        'Source failed',
+        'Underrun',
+        'ERROR',
+        'Alsa error: Device or resource busy!',
+        'source_shutdown',
+        'LOG END',
+        'Switch to net_outage',
+        '[net_outage',
+        'Feeding stopped: source stopped',
+        'Feeding stopped: Utils.Timeout',
+        'Feeding stopped: Ogg.End_of_stream',
+        'invalid or missing password',
+        'liquidsoap is not available!',
+        'We must catchup',
+        'Connection failed: could not connect to host',
         'EROR',
         'not found'
-	);
+    );
 
-	$('pre').each(
-		function () {
+    document.querySelectorAll('pre').forEach(pre => {
+        let str = pre.innerHTML;
+        for (const word of errors) {
+            str = str.split(word).join(`<span class="error">${word}</span>`);
+        }
+        for (const word of infos) {
+            str = str.split(word).join(`<span class="info">${word}</span>`);
+        }
+        for (const word of okays) {
+            str = str.split(word).join(`<span class="okay">${word}</span>`);
+        }
 
-			var str = $(this).html();
-			for (word in errors){
-				str = str.split(errors[word]).join('<span class="error">'+errors[word]+'</span>');
-			}
-			for (word in infos){
-				str = str.split(infos[word]).join('<span class="info">'+infos[word]+'</span>');
-			}
-			for (word in okays){
-				str = str.split(okays[word]).join('<span class="okay">'+okays[word]+'</span>');
-			}
-
-			$(this).html(str);
-		}
-	);
-
+        pre.innerHTML = str;
+    });
 }
 
-$(document).ready(
-	function() {
-		setDatePicker();
-		markUp();
-	}
-);
-
+document.addEventListener('DOMContentLoaded', function() {
+    setDatePicker();
+    markUp();
+});

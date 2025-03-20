@@ -1,9 +1,8 @@
-#/usr/bin/perl
+#!/usr/bin/perl
 use strict;
 use warnings;
 
 use CGI::Simple();
-use Data::Dumper;
 use Time::HiRes qw(time);
 use File::Basename();
 use PerlIO::gzip();
@@ -45,7 +44,10 @@ my $settings = {
     scheduler => {
         name      => 'scheduler',
         files     => '/var/log/stream-schedule/scheduler.log',
-        blacklist => [ "skip", "buildDataFile()", "plot()", "checkSleep()", "printStatus()" ]
+        blacklist => [
+            "skip", "buildDataFile()", "plot()", "checkSleep()",
+            "printStatus()"
+        ]
     },
     icecast => {
         name      => 'icecast2',
@@ -62,54 +64,25 @@ my $settings = {
 
 binmode STDOUT, ":encoding(UTF-8)";
 
-sub printHeader {
-
-    #print "Content-type:text/plain; charset=utf8\n\n";
-    my $header = loadFile( $webappDir . "/template/header.html" );
-    $header =~ s/\$outputStream/$outputStream/g;
-
-    $header .= q{
-        <link type="text/css" href="css/jquery-ui.min.css" rel="stylesheet" />  
-    <script type="text/javascript" src="js/jquery-ui.min.js"></script>
-    <script type="text/javascript" src="js/log.js"></script>
-
-    <div class="panel">
-    <form id="form" action="log.cgi" method="get">
-        <p>Date: <input name="date" type="text" class="datepicker" size="30"/></p>
-    </form> 
-    <pre>};
-    print $header;
-}
-
 sub epochToDatetime {
-    my $time = shift;
-
-    $time = time() unless ( ( defined $time ) && ( $time ne '' ) );
-    ( my $sec, my $min, my $hour, my $day, my $month, my $year ) = localtime($time);
-    my $datetime =
-      sprintf( "%4d-%02d-%02d %02d:%02d:%02d", $year + 1900, $month + 1, $day, $hour, $min, $sec );
-    return $datetime;
+    my ($s, $m, $h, $d, $mo, $y) = localtime(shift || time);
+    return sprintf "%04d-%02d-%02d %02d:%02d:%02d", $y + 1900, $mo + 1, $d, $h,
+      $m, $s;
 }
 
 sub loadFile {
-    my $filename = $_[0];
-
-    unless ( -e $filename ) {
-        printError("cant access file '$filename'!");
-        return '';
-    }
-    open my $fh, "<", $filename || printError("cant read file '$filename'!");
-    local $/ = undef;
-    my $content = <$fh>;
+    my $f = shift;
+    return '' unless -e $f;
+    open my $fh, '<', $f or printError("can't read file '$f'!") && return '';
+    local $/;
+    my $c = <$fh>;
     close $fh;
-    return $content;
+    return $c;
 }
 
 sub printError {
-    my $message = shift;
-    my $option  = shift;
-    print qq{<div class="error"><span class="icon" >&nbsp; &nbsp; &nbsp;</span>$message</div>};
-    exit if $option eq 'exit';
+    print qq{<div class="error"><span class="icon">⚠️</span>$_[0]</div>};
+    exit if $_[1] && $_[1] eq 'exit';
 }
 
 sub getFileType($) {
@@ -119,7 +92,8 @@ sub getFileType($) {
     my $data = <$fh>;
     close $fh;
 
-    my $bytes = sprintf( '%02x %02x', ord( substr( $data, 0, 1 ) ), ord( substr( $data, 1, 1 ) ) );
+    my $bytes =
+      sprintf('%02x %02x', ord(substr($data, 0, 1)), ord(substr($data, 1, 1)));
     return 'gzip' if $bytes eq '1f 8b';
     return 'text';
 }
@@ -134,9 +108,6 @@ sub getModifiedAt($) {
     return $stats->[9];
 }
 
-#1524953936
-#1527458400
-
 sub parseFile {
     my $linesByDate = shift;
     my $file        = shift;
@@ -144,32 +115,34 @@ sub parseFile {
     my $blackList   = shift;
     my $name        = shift;
 
-    my ( $year, $month, $day ) = split /\-/, $targetDate;
+    my ($year, $month, $day) = split /\-/, $targetDate;
     my $targetEpoch =
-      Time::Local::timelocal( 0, 0, 0, $day, $month - 1, $year - 1900 );    #+ 24 * 60 *60;
+      Time::Local::timelocal(0, 0, 0, $day, $month - 1, $year - 1900)
+      ;    #+ 24 * 60 *60;
 
     my @stats = stat $file;
 
-    my $modifiedAt = getModifiedAt( \@stats );
-    if ( $modifiedAt < $targetEpoch ) {
-        print "file $file is too old, modifiedAt=$modifiedAt, targetEpoch=$targetEpoch \n";
+    my $modifiedAt = getModifiedAt(\@stats);
+    if ($modifiedAt < $targetEpoch) {
+        print
+"file $file is too old, modifiedAt=$modifiedAt, targetEpoch=$targetEpoch \n";
         return undef;
     }
 
     my $fileType = getFileType($file);
-    my $size     = getFileSize( \@stats );
-    if ( ( $fileType eq 'text' ) && ( $size > 5 * $MB ) ) {
+    my $size     = getFileSize(\@stats);
+    if (($fileType eq 'text') && ($size > 5 * $MB)) {
         print "$file is to big! ignore...\n";
         return undef;
-    } elsif ( ( $fileType eq 'gzip' ) && ( $size > 1 * $MB ) ) {
+    } elsif (($fileType eq 'gzip') && ($size > 1 * $MB)) {
         print "$file is to big! ignore...\n";
         return undef;
     }
 
     my $cmd = undef;
-    if ( $fileType eq 'gzip' ) {
+    if ($fileType eq 'gzip') {
         open $cmd, "<:gzip", $file or die $!;
-    } elsif ( $fileType =~ /text/ ) {
+    } elsif ($fileType =~ /text/) {
         open $cmd, '<', $file;
     } else {
         print "file $file ($fileType): could not open to read\n";
@@ -177,13 +150,13 @@ sub parseFile {
     }
 
     my $dateMatch =
-      qr/([\[]?(\d\d\d\d)[\s\-\/]+(\d\d)[\s\-\/]+(\d\d)[\sT]+(\d\d)\:(\d\d)\:(\d\d)[\]]?\s+)/;
+qr/([\[]?(\d\d\d\d)[\s\-\/]+(\d\d)[\s\-\/]+(\d\d)[\sT]+(\d\d)\:(\d\d)\:(\d\d)[\]]?\s+)/;
     my $duplicate    = 1;
     my $line         = '';
     my $previousLine = '';
     my $datetime     = '';
 
-    my $blackMatch = '(' . join( "|", @$blackList ) . ')';
+    my $blackMatch = '(' . join("|", @$blackList) . ')';
     $blackMatch = qr/$blackMatch/;
 
     my $matchCounter = 0;
@@ -192,7 +165,7 @@ sub parseFile {
         $line = $_;
         $lineCounter++;
 
-        if ( $line =~ /$dateMatch/ ) {
+        if ($line =~ /$dateMatch/) {
             my $match = $1;
             my $year  = $2;
             my $month = $3;
@@ -201,14 +174,16 @@ sub parseFile {
             my $min   = $6;
             my $sec   = $7;
             my $date  = $year . "-" . $month . "-" . $day;
-            if ( $date lt $targetDate ) {
+
+            if ($date lt $targetDate) {
                 next;
-            } elsif ( $date gt $targetDate ) {
-                printf( "file %s: found %d of %d lines\n", $file, $matchCounter, $lineCounter );
+            } elsif ($date gt $targetDate) {
+                printf("file %s: found %d of %d lines\n",
+                    $file, $matchCounter, $lineCounter);
                 return 1;
             }
             $datetime = $date . " " . $hour . ":" . $min . ":" . $sec;
-            $line = substr( $line, length($match) );
+            $line     = substr($line, length($match));
         }
 
         #add blacklist parameters
@@ -217,10 +192,10 @@ sub parseFile {
         $linesByDate->{$datetime} = [] unless defined $linesByDate->{$datetime};
         my $lines = $linesByDate->{$datetime};
 
-        if ( $line eq $previousLine ) {
+        if ($line eq $previousLine) {
             $duplicate++;
             next;
-        } elsif ( ( $duplicate > 1 ) && ( scalar(@$lines) > 1 ) ) {
+        } elsif (($duplicate > 1) && (scalar(@$lines) > 1)) {
             $lines->[-1] =~ s/\n$//g;
             $lines->[-1] .= " [$duplicate times]\n";
             $duplicate = 1;
@@ -233,7 +208,8 @@ sub parseFile {
 
     }
     close $cmd;
-    printf( "file %s: found %d of %d lines\n", $file, $matchCounter, $lineCounter );
+    printf("file %s: found %d of %d lines\n",
+        $file, $matchCounter, $lineCounter);
     return 1;
 }
 
@@ -242,91 +218,69 @@ sub parseFile {
 #2016-03-24 08:12:11 [server:3] New client: localhost.
 
 sub parseFiles {
-    my $year  = shift;
-    my $month = shift;
-    my $day   = shift;
+    my ($year, $month, $day) = @_;
+    my $targetDate = "$year-$month-$day";
+    my ($files, $filesParsed, %linesByDate);
 
-    my $targetDate  = $year . '-' . $month . '-' . $day;
-    my $files       = 0;
-    my $filesParsed = 0;
-    my $linesByDate = {};
+    print q{<div class="panel" style="text-align:left;">};
+    my $start = time();
 
-    for my $process ( keys %$settings ) {
-        my $name      = $settings->{$process}->{name};
-        my $blackList = $settings->{$process}->{blacklist};
+    for my $proc (sort keys %$settings) {
+        my $s = $settings->{$proc};
+        my ($name, $blackList, $path) = @$s{qw(name blacklist files)};
+        my $dir = File::Basename::dirname($path);
 
-        my $file = $settings->{$process}->{files};
-        my $dir  = File::Basename::dirname($file);
-        unless ( -d $dir ) {
-            print STDERR "skip $dir\n";
+        unless (-d $dir) {
+            warn "skip $dir\n";
             next;
         }
 
-        # build filter pattern
-        my $filePattern = quotemeta($file) . '(\.\d+)?(\.gz)?$';
-        $filePattern = qr/$filePattern/;
+        my $pattern = qr/\Q$path\E(?:\.\d+)?(?:\.gz)?$/;
+        opendir my $dh, $dir or next;
 
-        # read directory
-        opendir my $dh, $dir || next;
-        while ( my $file = readdir($dh) ) {
-            $file = $dir . '/' . $file;
-            next unless $file =~ $filePattern;
+        for my $file (readdir $dh) {
+            $file = "$dir/$file";
+            next unless $file =~ $pattern;
             $files++;
             $filesParsed++
-              if defined parseFile( $linesByDate, $file, $targetDate, $blackList, $name );
+              if parseFile(\%linesByDate, $file, $targetDate, $blackList,
+                $name);
         }
-        close $dh;
+        closedir $dh;
     }
+    printf("<hr>parsed %d of %d files\n", $filesParsed, $files);
+    print "</div>";
 
-    printf( "parsed %d of %d files\n", $filesParsed, $files );
-
-    my @dates = sort { $a cmp $b } keys %$linesByDate;
-
-    print join( "", ( map { join( "", @{ $linesByDate->{$_} } ) } @dates ) );
+    print q{<div class="panel" style="text-align:left;">};
+    print join "", map {join "", @{$linesByDate{$_}}} sort keys %linesByDate;
+    print sprintf("<hr>took %.2f seconds\n", time() - $start);
+    print "</div>";
 }
 
-sub main {
-    my $start  = time();
-    my $cgi    = new CGI::Simple();
-    my $params = $cgi->Vars;
+my $cgi    = new CGI::Simple();
+my $params = $cgi->Vars;
 
-    my $year  = '';
-    my $month = '';
-    my $day   = '';
+print $cgi->header('text/html;charset=utf-8');
+printError('config file does not exist', 'exit') unless -e $webConfigFile;
+printError('cannot read config file',    'exit') unless -r $webConfigFile;
 
-    if ( $params->{date} eq 'today' ) {
-        $params->{date} = epochToDatetime();
-    }
-    if ( $params->{date} =~ /(\d\d\d\d)\-(\d\d)\-(\d\d)/ ) {
-        $year  = $1;
-        $month = $2;
-        $day   = $3;
-    }
+my $config = Config::General->new($webConfigFile);
+$config = $config->{DefaultConfig};
+printError('no config set', 'exit') unless defined $config;
+$webappDir    = $config->{web}->{webAppDir};
+$outputStream = $config->{web}->{outputStream};
 
-    #if ($ENV{HTTP_REFERER}=~/log/){
-    print $cgi->header('text/html;charset=utf-8');
-    printError( 'config file does not exist', 'exit' ) unless -e $webConfigFile;
-    printError( 'cannot read config file',    'exit' ) unless -r $webConfigFile;
+my $header = loadFile($webappDir . "/template/header.html");
+$header =~ s/\$outputStream/$outputStream/g;
+print $header . q{
+    <script type="text/javascript" src="js/log.js"></script>
+    <form id="form" action="log.cgi" method="get" style="position:absolute;left:1rem;top:0.5rem">
+        Date <input name="date" type="date" class="datepicker" size="30" style="padding:1rem"/>
+    </form>
+    <div style="padding:1rem; white-space: pre-wrap;">};
 
-    my $config = Config::General->new($webConfigFile);
-    $config = $config->{DefaultConfig};
-    printError( 'no config set', 'exit' ) unless defined $config;
-    $webappDir    = $config->{web}->{webAppDir};
-    $outputStream = $config->{web}->{outputStream};
-
-    printHeader();
-
-    exit if ( $params->{date} eq '' );
-
-    parseFiles( $year, $month, $day );
-
-    my $content = '';
-    $content .= '</pre>';
-    $content .= sprintf( "took %.2f seconds\n", ( time() - $start ) );
-    $content .= '</div></body></html>';
-
-    print $content;
-
+$params->{date} = epochToDatetime() if $params->{date} eq 'today';
+exit                                if $params->{date} eq '';
+if ($params->{date} =~ /(\d\d\d\d)\-(\d\d)\-(\d\d)/) {
+    parseFiles($1, $2, $3);
 }
-
-main();
