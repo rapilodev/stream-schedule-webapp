@@ -10,13 +10,13 @@ Homepage: https://launchpad.net/~mc-1/+archive/stream-schedule
 Package: stream-schedule-webapp
 Architecture: all
 Depends: ${misc:Depends},
- apache2,
- libapache2-mod-perl2,
- libdata-compare-perl,
- libnumber-compare-perl,
- libcgi-application-perl,
- libcgi-simple-perl,
+ libmojolicious-perl,
+ libconfig-general-perl,
+ libconst-fast-perl,
+ libfile-readbackwards-perl,
  libperlio-gzip-perl,
+ apache2,
+ libapache2-mod-fcgid,
  stream-schedule
-Description: web gui for stream scheduler
- a web gui to show status, plots and logs
+Description: web app for stream scheduler
+ a web gui to show status, schedule, status, plots and logs

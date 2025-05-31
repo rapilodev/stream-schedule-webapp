@@ -41,14 +41,14 @@ function loadWidget(el, url) {
 }
 
 function loadWidgets() {
-    loadWidget(document.getElementById("plot"), "plot.cgi");
-    loadWidget(document.getElementById("liquidsoap-status"), "liquidsoap-status.cgi");
-    loadWidget(document.getElementById("schedule"), "schedule.cgi");
-    loadWidget(document.getElementById("schedule-ongoing"), "schedule-ongoing.cgi");
-    loadWidget(document.getElementById("schedule-upcoming"), "schedule-upcoming.cgi");
-    loadWidget(document.getElementById("date-status"), "date-status.cgi");
-    showMessages(document.getElementById("messages"), "stream-status.cgi");
-    audio_levels(document.getElementById("audio-levels"), "level.cgi");
+    loadWidget(document.getElementById("plot"), "/stream-schedule/plot");
+    loadWidget(document.getElementById("liquidsoap-status"), "/stream-schedule/liquidsoap-status");
+    loadWidget(document.getElementById("schedule"), "/stream-schedule/schedule");
+    loadWidget(document.getElementById("schedule-ongoing"), "/stream-schedule/schedule-ongoing");
+    loadWidget(document.getElementById("schedule-upcoming"), "/stream-schedule/schedule-upcoming");
+    loadWidget(document.getElementById("date-status"), "/stream-schedule/date-status");
+    showMessages(document.getElementById("messages"), "/stream-schedule/stream-status");
+    audio_levels(document.getElementById("audio-levels"), "/stream-schedule/level");
 }
 
 const dbToWidth = (db) => {
@@ -100,7 +100,6 @@ function audio_levels(el, url) {
         makeBar("Output Left", "out-left");
         makeBar("Output Right", "out-right");
     }
-
     fetch(url)
         .then(resp => resp.json())
         .then(data => {
@@ -129,7 +128,7 @@ function audio_levels(el, url) {
 
 
 document.addEventListener("DOMContentLoaded", () => {
-    //setInterval(loadWidgets, 10000);
+    setInterval(loadWidgets, 10000);
     loadWidgets();
 
     function handleButtonClick(buttonId, endpoint, successMessagePrefix) {
@@ -149,7 +148,7 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
-    handleButtonClick("#sync-button", "sync.cgi", "Sync");
-    handleButtonClick("#restart-button", "restart.cgi", "Restart");
+    handleButtonClick("#sync-button", "/stream-schedule/sync", "Sync");
+    handleButtonClick("#restart-button", "/stream-schedule/restart", "Restart");
 
 });

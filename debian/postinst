@@ -10,7 +10,9 @@ if [ -d /usr/share/stream-schedule-webapp/ ]; then
    chmod 0750 /usr/share/stream-schedule-webapp/ 
 fi
 
-a2enmod perl
+#a2enmod perl
+a2enmod fcgid
+a2enmod rewrite
 a2ensite stream-schedule.conf
 /etc/init.d/apache2 restart
 

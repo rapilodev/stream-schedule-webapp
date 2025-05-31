@@ -1,4 +1,8 @@
-stream-schedule-webapp (0.5) noble; urgency=low
+stream-schedule-webapp (0.6.1) noble; urgency=low
+  * convert to mojolicious app (cgi, fastcgi, mod_perl)
+ -- Milan Chrobok <mc@radiopiloten.de>  Thu, 31 May 2025 00:00:00 +0200
+
+stream-schedule-webapp (0.5.2) noble; urgency=low
   * redesign
  -- Milan Chrobok <mc@radiopiloten.de>  Thu, 29 May 2025 00:00:00 +0200
 
