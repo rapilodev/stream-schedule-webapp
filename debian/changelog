@@ -1,3 +1,7 @@
+stream-schedule-webapp (0.5) noble; urgency=low
+  * redesign
+ -- Milan Chrobok <mc@radiopiloten.de>  Thu, 29 May 2025 00:00:00 +0200
+
 stream-schedule-webapp (0.4) focal; urgency=low
   * update debian files 
  -- Milan Chrobok <mc@radiopiloten.de>  Sun, 09 May 2021 00:00:00 +0200
