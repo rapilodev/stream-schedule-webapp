@@ -8,7 +8,6 @@ use Time::HiRes qw(time);
 use Time::Local();
 use PerlIO::gzip();
 use POSIX qw(strftime);
-use CGI::Carp qw(fatalsToBrowser);
 use lib "lib";
 use lib "$ENV{PERL5LIB}";
 use StreamSchedule;
